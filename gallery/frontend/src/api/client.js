@@ -113,6 +113,19 @@ export function updateAdminItemStock(itemId, stock) {
   return request(`/api/admin/items/${itemId}/stock`, {
     method: 'PATCH',
     body: JSON.stringify({ stock }),
+
+  export function uploadAdminImage(file) {
+    const formData = new FormData()
+    formData.append('file', file)
+    return fetch(`${API_BASE_URL}/api/admin/upload`, {
+      method: 'POST',
+      credentials: 'include',
+      body: formData,
+    }).then(async (res) => {
+      if (!res.ok) throw new Error('Upload failed')
+      return res.json()
+    })
+  }
   })
 }
 

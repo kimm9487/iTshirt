@@ -290,6 +290,38 @@ button:hover,
 }
 
 .form-grid {
+
+  .image-drop-zone {
+    border: 2px dashed var(--line);
+    border-radius: 10px;
+    padding: 1.5rem;
+    text-align: center;
+    cursor: pointer;
+    color: #888;
+    font-size: 0.9rem;
+    transition: border-color 0.2s, background 0.2s;
+    min-height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  .image-drop-zone.dragging {
+    border-color: #7a5c3c;
+    background: #f5f0ea;
+  }
+
+  .image-drop-zone:hover {
+    border-color: #7a5c3c;
+  }
+
+  .image-preview {
+    max-width: 100%;
+    max-height: 200px;
+    border-radius: 8px;
+    object-fit: contain;
+  }
   display: grid;
   gap: 0.6rem;
 }

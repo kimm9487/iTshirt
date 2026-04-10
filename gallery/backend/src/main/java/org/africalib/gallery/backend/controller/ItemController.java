@@ -15,11 +15,18 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @RestController
 public class ItemController {
@@ -32,11 +39,9 @@ public class ItemController {
     @Autowired
     MemberRepository memberRepository;
 
-//    @CrossOrigin(origins = "http://localhost:3000")
     @GetMapping("/api/items")
     public List<Item> getItems() {
-        List<Item> items = itemRepository.findAll();
-        return items;
+        return itemRepository.findAll();
     }
 
     @PostMapping("/api/admin/items")
@@ -77,6 +82,31 @@ public class ItemController {
         itemRepository.save(item);
 
         return new ResponseEntity<>(item, HttpStatus.OK);
+    }
+
+    @PostMapping("/api/admin/upload")
+    public ResponseEntity<?> uploadImage(
+            @RequestPart("file") MultipartFile file,
+            @CookieValue(value = "token", required = false) String token
+    ) {
+        validateAdmin(token);
+
+        String contentType = file.getContentType();
+        if (contentType == null || (!contentType.equals("image/jpeg") && !contentType.equals("image/png"))) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "jpg 또는 png 파일만 업로드 가능합니다.");
+        }
+
+        String ext = contentType.equals("image/jpeg") ? ".jpg" : ".png";
+        String filename = UUID.randomUUID().toString() + ext;
+        Path uploadDir = Paths.get("uploads");
+        try {
+            Files.createDirectories(uploadDir);
+            Files.copy(file.getInputStream(), uploadDir.resolve(filename));
+        } catch (IOException e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "파일 저장에 실패했습니다.");
+        }
+
+        return ResponseEntity.ok(Map.of("url", "/uploads/" + filename));
     }
 
     private void validateAdmin(String token) {
