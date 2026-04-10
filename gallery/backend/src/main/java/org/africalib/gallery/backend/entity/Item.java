@@ -18,8 +18,19 @@ public class Item {
     @Column(length = 50, nullable = false)
     private String name;
 
+    @Column(length = 30)
+    private String category;
+
     @Column(length = 100)
     private String imgPath;
+
+    @Lob
+    @Basic(fetch = FetchType.LAZY)
+    @Column(columnDefinition = "LONGBLOB")
+    private byte[] imageData;
+
+    @Column(length = 50)
+    private String imageContentType;
 
     @Column
     private int price;

@@ -18,14 +18,25 @@ export function formatPrice(value) {
   return new Intl.NumberFormat('ko-KR').format(value)
 }
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
+
+function normalizeImagePath(imgPath = '') {
+  if (!imgPath) return ''
+  if (/^https?:\/\//i.test(imgPath)) return imgPath
+  if (imgPath.startsWith('/')) return `${API_BASE_URL}${imgPath}`
+  return `${API_BASE_URL}/${imgPath}`
+}
+
 export function withPricing(item) {
   const discountPer = Number(item.discountPer || 0)
   const price = Number(item.price || 0)
   const salePrice = Math.max(0, Math.round(price * (1 - discountPer / 100)))
+  const imagePath = item.imageUrl || item.imgPath
 
   return {
     ...item,
-    category: guessCategory(item.name),
+    imgPath: normalizeImagePath(imagePath),
+    category: item.category || guessCategory(item.name),
     salePrice,
     displayPrice: `${formatPrice(salePrice)}원`,
     originalDisplayPrice: `${formatPrice(price)}원`,

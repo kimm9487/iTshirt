@@ -7,6 +7,7 @@ import lombok.Setter;
 @Setter
 public class CreateItemRequest {
     private String name;
+    private String category;
     private String imgPath;
     private int price;
     private int discountPer;

@@ -34,8 +34,14 @@ export function CartPage() {
       const result = await checkoutOrder()
       await clearCart()
       setCheckoutMessage(`주문이 완료되었습니다. 주문번호: ${result.orderId}`)
-    } catch {
-      setCheckoutMessage('결제에 실패했습니다. 로그인 상태를 확인하고 다시 시도해 주세요.')
+    } catch (err) {
+      if (err.status === 401) {
+        setCheckoutMessage('로그인이 필요합니다. 로그인 후 다시 시도해 주세요.')
+      } else if (err.status === 400) {
+        setCheckoutMessage('재고가 부족하거나 장바구니가 비어있습니다.')
+      } else {
+        setCheckoutMessage('결제에 실패했습니다. 잠시 후 다시 시도해 주세요.')
+      }
     } finally {
       setCheckoutPending(false)
     }

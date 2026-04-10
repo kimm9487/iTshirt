@@ -109,23 +109,36 @@ export function createAdminItem(payload) {
   })
 }
 
+export function createAdminItemMultipart(payload, file) {
+  const formData = new FormData()
+  formData.append('name', payload.name)
+  formData.append('category', payload.category ?? '')
+  formData.append('price', String(payload.price))
+  formData.append('discountPer', String(payload.discountPer ?? 0))
+  formData.append('stock', String(payload.stock))
+  if (file) {
+    formData.append('file', file)
+  }
+
+  return fetch(`${API_BASE_URL}/api/admin/items`, {
+    method: 'POST',
+    credentials: 'include',
+    body: formData,
+  }).then(async (res) => {
+    if (!res.ok) {
+      const error = new Error('Request failed')
+      error.status = res.status
+      throw error
+    }
+    const text = await res.text()
+    return text ? JSON.parse(text) : null
+  })
+}
+
 export function updateAdminItemStock(itemId, stock) {
   return request(`/api/admin/items/${itemId}/stock`, {
     method: 'PATCH',
     body: JSON.stringify({ stock }),
-
-  export function uploadAdminImage(file) {
-    const formData = new FormData()
-    formData.append('file', file)
-    return fetch(`${API_BASE_URL}/api/admin/upload`, {
-      method: 'POST',
-      credentials: 'include',
-      body: formData,
-    }).then(async (res) => {
-      if (!res.ok) throw new Error('Upload failed')
-      return res.json()
-    })
-  }
   })
 }
 

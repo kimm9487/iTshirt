@@ -1,20 +1,20 @@
 import { useState } from 'react'
-import { createAdminItem, updateAdminItemStock, uploadAdminImage } from '../api/client'
+import { createAdminItemMultipart, updateAdminItemStock } from '../api/client'
 import { useProducts } from '../context/ProductContext'
 
 export function AdminPage() {
   const { products, refreshProducts } = useProducts()
   const [form, setForm] = useState({
     name: '',
-    imgPath: '',
+    category: '',
     price: 0,
     discountPer: 0,
     stock: 0,
   })
   const [status, setStatus] = useState('')
+  const [imageFile, setImageFile] = useState(null)
   const [imagePreview, setImagePreview] = useState(null)
   const [isDragging, setIsDragging] = useState(false)
-  const [uploading, setUploading] = useState(false)
 
   function onChange(event) {
     const { name, value } = event.target
@@ -30,17 +30,9 @@ export function AdminPage() {
       setStatus('jpg 또는 png 파일만 업로드 가능합니다.')
       return
     }
-    setUploading(true)
     setStatus('')
-    try {
-      const { url } = await uploadAdminImage(file)
-      setForm((prev) => ({ ...prev, imgPath: url }))
-      setImagePreview(URL.createObjectURL(file))
-    } catch {
-      setStatus('이미지 업로드에 실패했습니다.')
-    } finally {
-      setUploading(false)
-    }
+    setImageFile(file)
+    setImagePreview(URL.createObjectURL(file))
   }
 
   function onDragOver(e) {
@@ -68,10 +60,11 @@ export function AdminPage() {
     setStatus('')
 
     try {
-      await createAdminItem(form)
+      await createAdminItemMultipart(form, imageFile)
       await refreshProducts()
       setStatus('상품이 등록되었습니다.')
-      setForm({ name: '', imgPath: '', price: 0, discountPer: 0, stock: 0 })
+      setForm({ name: '', category: '', price: 0, discountPer: 0, stock: 0 })
+      setImageFile(null)
       setImagePreview(null)
     } catch {
       setStatus('상품 등록에 실패했습니다.')
@@ -97,6 +90,17 @@ export function AdminPage() {
           <label htmlFor="name">상품명</label>
           <input id="name" name="name" value={form.name} onChange={onChange} required />
 
+          <label htmlFor="category">카테고리</label>
+          <select id="category" name="category" value={form.category} onChange={onChange}>
+            <option value="">선택 안 함 (자동)</option>
+            <option value="티셔츠">티셔츠</option>
+            <option value="상의">상의</option>
+            <option value="팬츠">팬츠</option>
+            <option value="슈즈">슈즈</option>
+            <option value="액세서리">액세서리</option>
+            <option value="기타">기타</option>
+          </select>
+
           <label>이미지</label>
           <div
             className={`image-drop-zone${isDragging ? ' dragging' : ''}`}
@@ -108,7 +112,7 @@ export function AdminPage() {
             {imagePreview ? (
               <img src={imagePreview} alt="미리보기" className="image-preview" />
             ) : (
-              <span>{uploading ? '업로드 중...' : '클릭하거나 이미지를 드래그하세요 (jpg, png)'}</span>
+              <span>클릭하거나 이미지를 드래그하세요 (jpg, png)</span>
             )}
             <input
               id="imageFileInput"
