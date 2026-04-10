@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useState } from 'react'
-import { checkoutOrder } from '../api/client'
+import { checkoutOrder, clearCartItems, pushCartItem } from '../api/client'
 import { useCart } from '../context/CartContext'
 import { useProducts } from '../context/ProductContext'
 import { formatPrice } from '../utils/catalog'
@@ -31,6 +31,14 @@ export function CartPage() {
     setCheckoutPending(true)
 
     try {
+      // 로컬 장바구니를 서버 DB에 먼저 동기화
+      await clearCartItems()
+      for (const [id, quantity] of Object.entries(items)) {
+        for (let i = 0; i < Number(quantity); i += 1) {
+          await pushCartItem(Number(id))
+        }
+      }
+
       const result = await checkoutOrder()
       await clearCart()
       setCheckoutMessage(`주문이 완료되었습니다. 주문번호: ${result.orderId}`)
@@ -38,7 +46,7 @@ export function CartPage() {
       if (err.status === 401) {
         setCheckoutMessage('로그인이 필요합니다. 로그인 후 다시 시도해 주세요.')
       } else if (err.status === 400) {
-        setCheckoutMessage('재고가 부족하거나 장바구니가 비어있습니다.')
+        setCheckoutMessage('재고가 부족합니다. 재고를 확인해 주세요.')
       } else {
         setCheckoutMessage('결제에 실패했습니다. 잠시 후 다시 시도해 주세요.')
       }

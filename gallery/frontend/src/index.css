@@ -496,6 +496,30 @@ input {
   width: 120px;
 }
 
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+
+  .modal-card {
+    background: var(--card-bg, #fff);
+    border-radius: 16px;
+    padding: 2rem;
+    width: min(480px, 95vw);
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  }
+
+  .modal-card h2 {
+    margin-bottom: 1.2rem;
+  }
+
 .site-footer {
   width: min(1200px, 100% - 2rem);
   margin: 0 auto 1rem;

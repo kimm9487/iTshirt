@@ -18,6 +18,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -156,6 +158,60 @@ public class ItemController {
                 .contentType(MediaType.parseMediaType(contentType))
                 .body(item.getImageData());
     }
+
+        @PutMapping(value = "/api/admin/items/{itemId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+        public ResponseEntity<?> updateItem(
+                @PathVariable("itemId") int itemId,
+                @RequestParam("name") String name,
+                @RequestParam(value = "category", defaultValue = "") String category,
+                @RequestParam("price") int price,
+                @RequestParam(value = "discountPer", defaultValue = "0") int discountPer,
+                @RequestParam(value = "file", required = false) MultipartFile file,
+                @CookieValue(value = "token", required = false) String token
+        ) {
+            validateAdmin(token);
+
+            Item item = itemRepository.findById(itemId)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+
+            if (name == null || name.isBlank()) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Item name is required.");
+            }
+
+            item.setName(name);
+            item.setCategory(category);
+            item.setPrice(price);
+            item.setDiscountPer(Math.max(discountPer, 0));
+
+            if (file != null && !file.isEmpty()) {
+                String contentType = file.getContentType();
+                if (contentType == null || (!contentType.equals("image/jpeg") && !contentType.equals("image/png"))) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "jpg 또는 png 파일만 업로드 가능합니다.");
+                }
+                try {
+                    item.setImageData(file.getBytes());
+                    item.setImageContentType(contentType);
+                    item.setImgPath("");
+                } catch (IOException e) {
+                    throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "파일 저장에 실패했습니다.");
+                }
+            }
+
+            itemRepository.save(item);
+            return ResponseEntity.ok(item);
+        }
+
+        @DeleteMapping("/api/admin/items/{itemId}")
+        public ResponseEntity<Void> deleteItem(
+                @PathVariable("itemId") int itemId,
+                @CookieValue(value = "token", required = false) String token
+        ) {
+            validateAdmin(token);
+            itemRepository.findById(itemId)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+            itemRepository.deleteById(itemId);
+            return ResponseEntity.noContent().build();
+        }
 
     private void validateAdmin(String token) {
         if (!jwtService.isValid(token)) {

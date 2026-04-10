@@ -65,7 +65,6 @@ export function AuthProvider({ children }) {
           } catch {
             setUser({ id: Number(serverUserId), source: 'server' })
           }
-          writeLocalSession(null)
           return
         }
       } catch {
@@ -79,6 +78,50 @@ export function AuthProvider({ children }) {
       }
       setLoading(false)
     }
+    // 서버 로그인 성공 시 localStorage에도 세션 저장 (새로고침 복구용)
+    async function bootstrap() {
+        const savedSession = readLocalSession()
+        try {
+          const serverUserId = await checkAccount()
+          if (!mounted) return
+
+          if (serverUserId) {
+            try {
+              const me = await fetchMyAccount()
+              if (!mounted) return
+              const userData = {
+                id: Number(me.id || serverUserId),
+                email: me.email,
+                name: me.name,
+                role: me.role || 'USER',
+                source: 'server',
+              }
+              setUser(userData)
+              writeLocalSession(userData)
+            } catch {
+              const fallback = { id: Number(serverUserId), source: 'server' }
+              setUser(fallback)
+              writeLocalSession(fallback)
+            }
+            return
+          }
+          // 서버가 미로그인 확인 → 로컬 세션도 초기화
+          writeLocalSession(null)
+        } catch (err) {
+          if (!mounted) return
+          // 네트워크 에러(서버 미구동) → 저장된 세션으로 복구
+          if (!err.status && savedSession) {
+            setUser(savedSession)
+            return
+          }
+        }
+
+        if (!mounted) return
+        const localSession = readLocalSession()
+        if (localSession) {
+          setUser({ ...localSession, source: 'local' })
+        }
+      }
 
     bootstrap().finally(() => {
       if (mounted) {
@@ -96,17 +139,20 @@ export function AuthProvider({ children }) {
       const id = await loginAccount(email, password)
       try {
         const me = await fetchMyAccount()
-        setUser({
-          id: Number(me.id || id),
-          email: me.email || email,
-          name: me.name || '',
-          role: me.role || 'USER',
-          source: 'server',
-        })
+          const userData = {
+            id: Number(me.id || id),
+            email: me.email || email,
+            name: me.name || '',
+            role: me.role || 'USER',
+            source: 'server',
+          }
+          setUser(userData)
+          writeLocalSession(userData)
       } catch {
-        setUser({ id: Number(id), email, source: 'server' })
+          const fallback = { id: Number(id), email, source: 'server' }
+          setUser(fallback)
+          writeLocalSession(fallback)
       }
-      writeLocalSession(null)
       return
     } catch {
       const users = readLocalUsers()

@@ -142,4 +142,34 @@ export function updateAdminItemStock(itemId, stock) {
   })
 }
 
-export { API_BASE_URL }
+  export function updateAdminItemMultipart(itemId, payload, file) {
+    const formData = new FormData()
+    formData.append('name', payload.name)
+    formData.append('category', payload.category ?? '')
+    formData.append('price', String(payload.price))
+    formData.append('discountPer', String(payload.discountPer ?? 0))
+    if (file) {
+      formData.append('file', file)
+    }
+    return fetch(`${API_BASE_URL}/api/admin/items/${itemId}`, {
+      method: 'PUT',
+      credentials: 'include',
+      body: formData,
+    }).then(async (res) => {
+      if (!res.ok) {
+        const error = new Error('Request failed')
+        error.status = res.status
+        throw error
+      }
+      const text = await res.text()
+      return text ? JSON.parse(text) : null
+    })
+  }
+
+  export function deleteAdminItem(itemId) {
+    return request(`/api/admin/items/${itemId}`, {
+      method: 'DELETE',
+    })
+  }
+
+  export { API_BASE_URL }
