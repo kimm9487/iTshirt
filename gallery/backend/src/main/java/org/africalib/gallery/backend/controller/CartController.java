@@ -43,14 +43,14 @@ public class CartController {
                 return null;
             }
 
-            return Map.of(
-                    "itemId", item.getId(),
-                    "name", item.getName(),
-                    "imgPath", item.getImgPath(),
-                    "price", item.getPrice(),
-                    "discountPer", item.getDiscountPer(),
-                    "quantity", cart.getQuantity()
-            );
+            Map<String, Object> row = new java.util.HashMap<>();
+            row.put("itemId", item.getId());
+            row.put("name", item.getName());
+            row.put("imgPath", item.getImgPath());
+            row.put("price", item.getPrice());
+            row.put("discountPer", item.getDiscountPer());
+            row.put("quantity", cart.getQuantity());
+            return row;
         }).filter(row -> row != null).toList();
 
         return new ResponseEntity<>(response, HttpStatus.OK);
