@@ -1,4 +1,4 @@
-# 🛍️ Gallery Shop
+# 🛍️ iTshirt Shop
 
 React + Spring Boot 기반 풀스택 쇼핑몰 프로젝트입니다.
 
