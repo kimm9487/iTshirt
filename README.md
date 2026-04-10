@@ -126,3 +126,36 @@ iTshirt/
 | PATCH | `/api/admin/items/{itemId}/stock` | 재고 수정 |
 | PUT | `/api/admin/items/{itemId}` | 상품 정보 수정 (multipart) |
 | DELETE | `/api/admin/items/{itemId}` | 상품 삭제 |
+
+## 이미지 업로드가 DB에 저장되는 방식
+
+관리자 페이지에서 png/jpg를 업로드하면 파일이 서버 디스크가 아니라 MariaDB `items` 테이블에 저장됩니다.
+
+### 1) 프론트에서 multipart 전송
+- 프론트는 `FormData`로 `name`, `category`, `price`, `discountPer`, `stock`, `file`을 함께 전송합니다.
+- 전송 API: `POST /api/admin/items`
+
+### 2) 백엔드에서 파일 검증
+- `ItemController.createItemWithImage()`에서 업로드 파일을 검사합니다.
+- 허용 타입은 `image/jpeg`, `image/png`만 허용합니다.
+
+### 3) 엔티티에 바이너리 저장
+- 파일 바이트는 `Item.imageData`에 저장됩니다.
+- MIME 타입은 `Item.imageContentType`에 저장됩니다.
+- JPA 매핑:
+	- `imageData`: `@Lob` + `LONGBLOB`
+	- `imageContentType`: `VARCHAR(50)`
+
+### 4) DB 저장 결과
+- `itemRepository.save(item)` 호출로 `items` 테이블에 저장됩니다.
+- 파일 시스템 경로(`imgPath`)를 쓰는 대신 이미지 데이터는 DB 컬럼으로 관리합니다.
+
+### 5) 클라이언트 표시 방식
+- 상품 목록 조회 `GET /api/items` 응답에 `imageUrl`이 포함됩니다.
+- `imageUrl` 값은 `/api/items/{itemId}/image` 형태입니다.
+- 실제 이미지 조회 시 `GET /api/items/{itemId}/image`가 `imageData`를 바이트로 반환하고, `imageContentType`으로 Content-Type을 설정합니다.
+
+요약:
+- 업로드는 multipart 요청으로 들어오고,
+- 백엔드는 파일 바이트를 `LONGBLOB`에 저장하며,
+- 화면 표시는 별도 이미지 조회 API로 DB 바이너리를 다시 내려주는 구조입니다.
